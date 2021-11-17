@@ -2,11 +2,13 @@
  * This script shoud be run at the ./_posts path
  * gcc hexo_publish.c -o "$hexo_publish"
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <locale.h>
+
 int is_windows()
 {
     char *os = getenv("OS");
@@ -19,6 +21,7 @@ int is_windows()
     }
     return 0;
 }
+
 int main()
 {
     setlocale(LC_TIME, "zh_CN.UTF-8");

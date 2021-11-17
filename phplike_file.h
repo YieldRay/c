@@ -1,2 +1,3 @@
-void file_put_contents(char *filename, char *str);
-void file_get_contents(char *filename, char *receiver);
+#define MAX_SIZE 65536
+int file_put_contents(char *filename, char *str);
+int file_get_contents(char *filename, char *receiver);

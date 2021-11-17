@@ -1,93 +1,162 @@
 /**
- * ÏÂ»®Ïß¿ªÍ·µÄ±äÁ¿»òº¯ÊıÎªÄÚ²¿Ê¹ÓÃ
- * ·ÇÌØÊâÇé¿ö²»ÒªÊ¹ÓÃ
- *  Ê¾Àı£º
+ * ä¸‹åˆ’çº¿å¼€å¤´çš„å˜é‡æˆ–å‡½æ•°ä¸ºå†…éƒ¨ä½¿ç”¨
+ * éç‰¹æ®Šæƒ…å†µä¸è¦ä½¿ç”¨
+ *  ç¤ºä¾‹ï¼š
+
 #include "./colorful_print.h"
 int main()
 {
-   colorful_print("here is some text\n", "sky_blue", "purple", -1);
-   colorful_config config = {"text in struct",
-                             "sky_blue",
-                             "yellow",
-                             -1};
+   colorful_print("here is some text\n", "cyan", "magenta", -1);
+
+   // OR
+
+   colorful_config config = {.text="text in struct", .text_color="cyan", .bg_color="yellow", style=-1};
    colorful_print_struct(config);
 }
+
 */
 #include <stdio.h>
 #include <string.h>
+#include <windows.h>
 
 typedef struct
 {
-   char *text;       //  Êä³öµÄÎÄ±¾,²»»á×Ô´ø»»ĞĞ
-   char *text_color; // ÎÄ±¾ÑÕÉ«£¬¿ÉÑ¡ black red green yellow blue purple sky_blue white
-   char *bg_color;   // ÎÄ±¾±³¾°£¬¿ÉÑ¡ black red green yellow blue purple sky_blue white
-   int style;        // ÎÄ±¾·ç¸ñ£¬¸ºÊıÊ±Õı³££¬0ÎªÈ¥³ıÑùÊ½£¬1Îª¼Ó´Ö£¬2ÎªÎÄ±¾±äµ­£¬3ÎªĞ±Ìå£¬4ÎªÏÂ»®Ïß£¨×îºÃÓ¢ÎÄÎÄ±¾Ê¹ÓÃ£©£¬7Îª£¨ÎÄ±¾Óë±³¾°£©·´É«£¬8ÎªÎÄ±¾ÏûÊ§£¬9ÎªÉ¾³ıÏß
+	char *text;		  //  è¾“å‡ºçš„æ–‡æœ¬,ä¸ä¼šè‡ªå¸¦æ¢è¡Œ
+	char *text_color; // æ–‡æœ¬é¢œè‰²ï¼Œå¯é€‰ black red green yellow blue magenta cyan white
+	char *bg_color;	  // æ–‡æœ¬èƒŒæ™¯ï¼Œå¯é€‰ black red green yellow blue magenta cyan white
+	int style;		  // æ–‡æœ¬é£æ ¼(Windowsä¸‹æœªå®ç°)ï¼Œè´Ÿæ•°æ—¶æ­£å¸¸ï¼Œ0ä¸ºå»é™¤æ ·å¼ï¼Œ1ä¸ºåŠ ç²—ï¼Œ2ä¸ºæ–‡æœ¬å˜æ·¡ï¼Œ3ä¸ºæ–œä½“ï¼Œ4ä¸ºä¸‹åˆ’çº¿ï¼ˆæœ€å¥½è‹±æ–‡æ–‡æœ¬ä½¿ç”¨ï¼‰ï¼Œ7ä¸ºï¼ˆæ–‡æœ¬ä¸èƒŒæ™¯ï¼‰åè‰²ï¼Œ8ä¸ºæ–‡æœ¬æ¶ˆå¤±ï¼Œ9ä¸ºåˆ é™¤çº¿
 } colorful_config;
+
+int colorful_is_windows()
+{
+	char *os = getenv("OS");
+	if (os != NULL)
+	{
+		if (strcmp(os, "Windows_NT") == 0)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
 
 int _colorful_get_bg(char *color)
 {
-   if (strcmp(color, "black") == 0)
-      return 40;
-   if (strcmp(color, "red") == 0)
-      return 41;
-   if (strcmp(color, "green") == 0)
-      return 42;
-   if (strcmp(color, "yellow") == 0)
-      return 43;
-   if (strcmp(color, "blue") == 0)
-      return 44;
-   if (strcmp(color, "purple") == 0)
-      return 45;
-   if (strcmp(color, "sky_blue") == 0)
-      return 46;
-   if (strcmp(color, "white") == 0)
-      return 47;
-   if (strcmp(color, "transparent") == 0)
-      return 49;
-   // default
-   return 49;
+	if (strcmp(color, "black") == 0)
+		return 40;
+	if (strcmp(color, "red") == 0)
+		return 41;
+	if (strcmp(color, "green") == 0)
+		return 42;
+	if (strcmp(color, "yellow") == 0)
+		return 43;
+	if (strcmp(color, "blue") == 0)
+		return 44;
+	if (strcmp(color, "magenta") == 0)
+		return 45;
+	if (strcmp(color, "cyan") == 0)
+		return 46;
+	if (strcmp(color, "white") == 0)
+		return 47;
+	if (strcmp(color, "transparent") == 0)
+		return 49;
+	// default
+	return 49;
 }
 
-int _colorful_get_text(char *color)
+int colorful_colorful_get_text(char *color)
 {
-   if (strcmp(color, "black") == 0)
-      return 30;
-   if (strcmp(color, "red") == 0)
-      return 31;
-   if (strcmp(color, "green") == 0)
-      return 32;
-   if (strcmp(color, "yellow") == 0)
-      return 33;
-   if (strcmp(color, "blue") == 0)
-      return 34;
-   if (strcmp(color, "purple") == 0)
-      return 35;
-   if (strcmp(color, "sky_blue") == 0)
-      return 36;
-   if (strcmp(color, "white") == 0)
-      return 37;
-   if (strcmp(color, "less_white") == 0)
-      return 39;
-   // default
-   return 37;
+	if (strcmp(color, "black") == 0)
+		return 30;
+	if (strcmp(color, "red") == 0)
+		return 31;
+	if (strcmp(color, "green") == 0)
+		return 32;
+	if (strcmp(color, "yellow") == 0)
+		return 33;
+	if (strcmp(color, "blue") == 0)
+		return 34;
+	if (strcmp(color, "magenta") == 0)
+		return 35;
+	if (strcmp(color, "cyan") == 0)
+		return 36;
+	if (strcmp(color, "white") == 0)
+		return 37;
+	if (strcmp(color, "less_white") == 0)
+		return 39;
+	// default
+	return 37;
 }
 
-void _colorful_print(char *const text, int text_color, int bg_color, int style)
+int _colorful_get_text_windows(char *color)
 {
-   if (style >= 0)
-      printf("\033\[%d;%d;%dm%s\033\[0m", bg_color, text_color, style, text);
-   else
-      printf("\033\[%d;%dm%s\033\[0m", bg_color, text_color, text);
+	if (strcmp(color, "black") == 0)
+		return 0;
+	if (strcmp(color, "red") == 0)
+		return 4;
+	if (strcmp(color, "green") == 0)
+		return 2;
+	if (strcmp(color, "yellow") == 0)
+		return 6;
+	if (strcmp(color, "blue") == 0)
+		return 1;
+	if (strcmp(color, "magenta") == 0)
+		return 5;
+	if (strcmp(color, "cyan") == 0)
+		return 3;
+	if (strcmp(color, "white") == 0)
+		return 7;
+	if (strcmp(color, "less_white") == 0)
+		return 8;
+	// default
+	return 7;
+}
+
+int _colorful_get_bg_windows(char *color)
+{
+	if (strcmp(color, "black") == 0)
+		return 0;
+	if (strcmp(color, "red") == 0)
+		return BACKGROUND_RED;
+	if (strcmp(color, "green") == 0)
+		return BACKGROUND_GREEN;
+	if (strcmp(color, "yellow") == 0)
+		return 0x60;
+	if (strcmp(color, "blue") == 0)
+		return BACKGROUND_BLUE;
+	if (strcmp(color, "magenta") == 0)
+		return 0x50;
+	if (strcmp(color, "cyan") == 0)
+		return 0x30;
+	if (strcmp(color, "white") == 0)
+		return 0x70;
+	if (strcmp(color, "grey") == 0)
+		return 0x80;
+	// default
+	return 0;
 }
 
 void colorful_print(char *const text, char *text_color, char *bg_color, int style)
 {
-   int code_text_color = _colorful_get_text(text_color);
-   int code_bg_color = _colorful_get_bg(bg_color);
-   _colorful_print(text, code_text_color, code_bg_color, style);
+
+	if (colorful_is_windows())
+	{
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), _colorful_get_text_windows(text_color) | _colorful_get_bg_windows(bg_color));
+		printf(text);
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
+	}
+	else
+	{
+		int code_text_color = _colorful_get_text(text_color);
+		int code_bg_color = _colorful_get_bg(bg_color);
+		if (style >= 0)
+			printf("\033\[%d;%d;%dm%s\033\[0m", bg_color, text_color, style, text);
+		else
+			printf("\033\[%d;%dm%s\033\[0m", bg_color, text_color, text);
+	}
 }
 
 void colorful_print_struct(colorful_config config)
 {
-   colorful_print(config.text, config.text_color, config.bg_color, config.style);
+	colorful_print(config.text, config.text_color, config.bg_color, config.style);
 }

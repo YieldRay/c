@@ -11,6 +11,7 @@
  * ./convert
  * scriptName.bat programName
  */
+
 #define MAX_SINGLE_LINE 127
 #define MAX_TOTAL_LINE 255
 #define MAX_TOTAL_CODE 4095
