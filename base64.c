@@ -18,7 +18,7 @@
 // 43       +        62
 // 37       /        63
 
-char *base64_encode(char *str)
+char *base64_encode(const char *str)
 {
     char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int len = strlen(str);
@@ -50,7 +50,7 @@ char *base64_encode(char *str)
     return out;
 }
 
-char *base64_decode(char *str)
+char *base64_decode(const char *str)
 {
     char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int len = strlen(str);
@@ -67,7 +67,7 @@ char *base64_decode(char *str)
     char *out = (char *)malloc(sizeof(char) * (outlen + 1));
     int instep = 0;
     int outstep = 0;
-    for (int i = 0; i < group; i++)  // use strchr may cause low performance, but here is just for test
+    for (int i = 0; i < group; i++) // use strchr may cause low performance, but here is just for test
     {
         int a = strchr(base64_table, str[instep++]) - base64_table;
         int b = strchr(base64_table, str[instep++]) - base64_table;
