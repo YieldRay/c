@@ -24,7 +24,7 @@ int file_put_contents(const char *filename, const char *input)
  *
  * @param filename
  * @param block_size size of the initial buffer, will automatically expand twice the size of it if needed
- * @return read content, if got any error, return NULL
+ * @return read content (remember to free() it), if got any error, return NULL
  */
 char *file_get_contents(const char *filename, const unsigned int block_size)
 {
@@ -32,9 +32,9 @@ char *file_get_contents(const char *filename, const unsigned int block_size)
 	fp = fopen(filename, "r");
 	if (!fp)
 		return NULL;
-	// init cache block
+	// init cache buffer
 	char *buf = (char *)malloc(block_size * sizeof(char));
-	// start loop
+	// init loop var
 	int c;
 	unsigned long cur = 0;
 	unsigned long len = block_size;
@@ -44,20 +44,33 @@ char *file_get_contents(const char *filename, const unsigned int block_size)
 		if (cur >= len - 1)
 		{
 			len += block_size;
-			buf = (char *)realloc(buf, len * sizeof(char));
-			if (buf == NULL)
+			char *tmp = (char *)realloc(buf, len * sizeof(char));
+			// handle alloc error
+			if (tmp == NULL)
+			{
+				free(buf);
 				return NULL;
+			}
+			else
+			{
+				buf = tmp;
+			}
 		}
 		buf[cur++] = c;
 	}
 	buf[cur] = '\0';
 
+	// handle stream error
 	if (ferror(fp))
 	{
+		fclose(fp);
 		free(buf);
 		return NULL;
 	}
-	pclose(fp);
+	else
+	{
+		fclose(fp);
+	}
 
 	return buf;
 }

@@ -2,20 +2,21 @@
 #include <stdlib.h>
 
 /**
- * exec a command via popen(), it's synchronized
+ *
  * @param command
- * @param block_size
- * @return
+ * @param block_size size of the initial buffer, will automatically expand twice the size of it if needed
+ * @return read content (remember to free() it), if got any error, return NULL
  */
 char *exec_command(const char *command, const unsigned int block_size)
+
 {
     FILE *fp = NULL;
     fp = popen(command, "r");
     if (!fp)
         return NULL;
-    // init cache block
+    // init cache buffer
     char *buf = (char *)malloc(block_size * sizeof(char));
-    // start loop
+    // init loop var
     int c;
     unsigned long cur = 0;
     unsigned long len = block_size;
@@ -25,28 +26,39 @@ char *exec_command(const char *command, const unsigned int block_size)
         if (cur >= len - 1)
         {
             len += block_size;
-            buf = (char *)realloc(buf, len * sizeof(char));
-            if (buf == NULL)
+            char *tmp = (char *)realloc(buf, len * sizeof(char));
+            // handle alloc error
+            if (tmp == NULL)
+            {
+                free(buf);
                 return NULL;
+            }
+            else
+            {
+                buf = tmp;
+            }
         }
         buf[cur++] = c;
     }
     buf[cur] = '\0';
 
+    // handle stream error
     if (ferror(fp))
     {
+        pclose(fp);
         free(buf);
         return NULL;
     }
-    pclose(fp);
+    else
+    {
+        pclose(fp);
+    }
 
     return buf;
 }
 
-/*
-int main(void)
-{
-    printf("%s", exec_command("explorer http://nodejs.cn/download/", 100));
-    printf("%s", exec_command("ls", 100));
-}
- */
+// int main(void)
+// {
+//     printf("%s", exec_command("explorer http://nodejs.cn/download/", 1024));
+//     printf("%s", exec_command("ls", 1024));
+// }
