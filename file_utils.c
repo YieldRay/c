@@ -2,84 +2,85 @@
 #include <stdlib.h>
 
 /**
+ * Writes the input string to a file.
  *
- * @param filename
- * @param input
- * @return 1: success 0: fail
+ * @param filename The name of the file.
+ * @param input The string to write to the file.
+ * @return 0 on success, otherwise failure.
  */
 int file_put_contents(const char *filename, const char *input)
 {
-	FILE *fp;
-	fp = fopen(filename, "w");
+	FILE *fp = fopen(filename, "w");
+
 	if (!fp)
-		return 0;
-	int result = fputs(input, fp);
-	if (ferror(fp))
-		return 0;
-	fclose(fp);
-	return 1;
+		return 1;
+
+	if (fputs(input, fp) == EOF)
+	{
+		fclose(fp);
+		return 2;
+	}
+
+	if (fclose(fp) == EOF)
+		return 3;
+
+	return 0;
 }
 
 /**
+ * Reads the entire content of a file into a dynamically allocated buffer.
  *
- * @param filename
- * @param block_size size of the initial buffer, will automatically expand twice the size of it if needed
- * @return read content (remember to free() it), if got any error, return NULL
+ * @param filename The name of the file.
+ * @return A pointer to the buffer containing the file content (remember to free() it). If an error occurs, returns NULL.
  */
-char *file_get_contents(const char *filename, const unsigned int block_size)
+char *file_get_contents(const char *filename)
 {
-	FILE *fp = NULL;
-	fp = fopen(filename, "r");
+	const size_t block_size = 128;
+	FILE *fp = fopen(filename, "r");
 	if (!fp)
 		return NULL;
-	// init cache buffer
+
+	// Initialize the buffer
 	char *buf = (char *)malloc(block_size * sizeof(char));
-	// init loop var
+	if (buf == NULL)
+	{
+		fclose(fp);
+		return NULL;
+	}
+
+	// Initialize loop variables
 	int c;
-	unsigned long cur = 0;
-	unsigned long len = block_size;
+	size_t cur = 0;
+	size_t len = block_size;
+
+	// Read the file content
 	while ((c = fgetc(fp)) != EOF)
 	{
-		// should put to [cur], '\0' at len-1
+		// Resize the buffer if needed
 		if (cur >= len - 1)
 		{
 			len += block_size;
 			char *tmp = (char *)realloc(buf, len * sizeof(char));
-			// handle alloc error
 			if (tmp == NULL)
 			{
 				free(buf);
+				fclose(fp);
 				return NULL;
 			}
-			else
-			{
-				buf = tmp;
-			}
+			buf = tmp;
 		}
-		buf[cur++] = c;
+		buf[cur++] = (char)c;
 	}
 	buf[cur] = '\0';
 
-	// handle stream error
+	// Handle stream error
 	if (ferror(fp))
 	{
-		fclose(fp);
 		free(buf);
+		fclose(fp);
 		return NULL;
 	}
-	else
-	{
-		fclose(fp);
-	}
 
+	fclose(fp);
 	return buf;
 }
-
-/*
-int main()
-{
-	char *receiver = file_get_contents("file.c", 1024);
-	system("CHCP 65001");
-	printf(receiver);
-}
- */

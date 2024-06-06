@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 // int main()
 // {
@@ -20,11 +21,13 @@
 
 char *base64_encode(const char *str)
 {
-    char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    static const char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int len = strlen(str);
     int group = len % 3 == 0 ? len / 3 : len / 3 + 1;
     int outlen = group * 4;
     char *out = (char *)malloc(sizeof(char) * (outlen + 1));
+    if (!out)
+        return NULL; // Handle memory allocation failure
     out[outlen] = '\0';
     int instep = 0;
     int outstep = 0;
@@ -38,10 +41,10 @@ char *base64_encode(const char *str)
     }
     switch (len % 3)
     {
-    case 2: // has 2 in 3, need 1 '='
+    case 2: // Has 2 in 3, need 1 '='
         out[outlen - 1] = '=';
         break;
-    case 1: // has 1 in 3, need 2 '='
+    case 1: // Has 1 in 3, need 2 '='
         out[outstep - 1] = '=';
         out[outstep - 2] = '=';
         break;
@@ -52,7 +55,18 @@ char *base64_encode(const char *str)
 
 char *base64_decode(const char *str)
 {
-    char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    static unsigned char base64_table[256] = {0};
+    static int initialized = 0;
+    if (!initialized)
+    {
+        memset(base64_table, 0x80, 256); // Initialize all elements to an invalid value (0x80)
+        const char *base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        for (int i = 0; i < 64; i++)
+            base64_table[(unsigned char)base64_chars[i]] = i;
+        base64_table['='] = 0; // Padding character
+        initialized = 1;
+    }
+
     int len = strlen(str);
     int equal_count = 0; // 0 or 1 or 2
     for (int i = len - 1; i >= 0; i--)
@@ -62,21 +76,29 @@ char *base64_decode(const char *str)
         else
             break;
     }
+
     int group = len / 4;
     int outlen = group * 3 - equal_count;
     char *out = (char *)malloc(sizeof(char) * (outlen + 1));
+    if (!out)
+        return NULL; // Handle memory allocation failure
+
     int instep = 0;
     int outstep = 0;
-    for (int i = 0; i < group; i++) // use strchr may cause low performance, but here is just for test
+    for (int i = 0; i < group; i++)
     {
-        int a = strchr(base64_table, str[instep++]) - base64_table;
-        int b = strchr(base64_table, str[instep++]) - base64_table;
-        int c = strchr(base64_table, str[instep++]) - base64_table;
-        int d = strchr(base64_table, str[instep++]) - base64_table;
+        unsigned char a = base64_table[(unsigned char)str[instep++]];
+        unsigned char b = base64_table[(unsigned char)str[instep++]];
+        unsigned char c = base64_table[(unsigned char)str[instep++]];
+        unsigned char d = base64_table[(unsigned char)str[instep++]];
+
         out[outstep++] = (a << 2 & 0b11111100) | (b >> 4 & 0b00000011);
-        out[outstep++] = (b << 4 & 0b11110000) | (c >> 2 & 0b00001111);
-        out[outstep++] = (c << 6 & 0b11000000) | (d & 0b00111111);
+        if (outstep < outlen)
+            out[outstep++] = (b << 4 & 0b11110000) | (c >> 2 & 0b00001111);
+        if (outstep < outlen)
+            out[outstep++] = (c << 6 & 0b11000000) | (d & 0b00111111);
     }
+
     out[outlen] = '\0';
     return out;
 }

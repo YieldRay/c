@@ -1,64 +1,64 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
+ * Executes a command and reads its output into a dynamically allocated buffer.
  *
- * @param command
- * @param block_size size of the initial buffer, will automatically expand twice the size of it if needed
- * @return read content (remember to free() it), if got any error, return NULL
+ * @param command The command to execute.
+ * @return A pointer to the buffer containing the command output (remember to free() it). If an error occurs, returns NULL.
  */
-char *exec_command(const char *command, const unsigned int block_size)
-
+char *exec_command(const char *command)
 {
-    FILE *fp = NULL;
-    fp = popen(command, "r");
-    if (!fp)
-        return NULL;
-    // init cache buffer
-    char *buf = (char *)malloc(block_size * sizeof(char));
-    // init loop var
-    int c;
-    unsigned long cur = 0;
-    unsigned long len = block_size;
-    while ((c = fgetc(fp)) != EOF)
+    const size_t block_size = 128;
+    if (command == NULL)
     {
-        // should put to [cur], '\0' at len-1
-        if (cur >= len - 1)
+        return NULL;
+    }
+
+    FILE *fp = popen(command, "r");
+    if (fp == NULL)
+    {
+        return NULL;
+    }
+
+    char *buf = (char *)malloc(block_size * sizeof(char));
+    if (buf == NULL)
+    {
+        pclose(fp);
+        return NULL;
+    }
+
+    size_t cur = 0;
+    size_t len = block_size;
+    char temp_buf[block_size]; // Temporary buffer for reading chunks
+
+    while (fgets(temp_buf, sizeof(temp_buf), fp) != NULL)
+    {
+        size_t temp_len = strlen(temp_buf);
+        if (cur + temp_len >= len)
         {
-            len += block_size;
+            len += block_size + temp_len;
             char *tmp = (char *)realloc(buf, len * sizeof(char));
-            // handle alloc error
             if (tmp == NULL)
             {
                 free(buf);
+                pclose(fp);
                 return NULL;
             }
-            else
-            {
-                buf = tmp;
-            }
+            buf = tmp;
         }
-        buf[cur++] = c;
+        strcpy(buf + cur, temp_buf);
+        cur += temp_len;
     }
-    buf[cur] = '\0';
 
-    // handle stream error
     if (ferror(fp))
     {
-        pclose(fp);
         free(buf);
+        pclose(fp);
         return NULL;
     }
-    else
-    {
-        pclose(fp);
-    }
 
+    pclose(fp);
     return buf;
 }
-
-// int main(void)
-// {
-//     printf("%s", exec_command("explorer http://nodejs.cn/download/", 1024));
-//     printf("%s", exec_command("ls", 1024));
-// }

@@ -1,6 +1,5 @@
 {
     "files.associations": {
-        "*.ejs": "html",
         "random": "cpp",
         "limits": "cpp",
         "cmath": "cpp",
